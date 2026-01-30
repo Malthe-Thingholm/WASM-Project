@@ -27,10 +27,18 @@ jobs:
           curl -L https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_VERSION}/wasi-sdk-${WASI_VERSION}.0-linux.tar.gz | tar xz -C /tmp
           sudo mv /tmp/wasi-sdk-${WASI_VERSION}.0/* ${{ env.WASI_SDK_PATH }}/
 
-      - name: Install wit-bindgen
+      - name: Install wit-bindgen (Dynamic Version)
         run: |
-          curl -L https://github.com/bytecodealliance/wit-bindgen/releases/download/wit-bindgen-v0.24.0/wit-bindgen-v0.24.0-x86_64-linux.tar.gz | tar xz
-          sudo mv wit-bindgen-v0.24.0-x86_64-linux/wit-bindgen /usr/local/bin/
+          # Query GitHub for the latest release tag
+          TAG=$(curl -s https://api.github.com/repos/bytecodealliance/wit-bindgen/releases/latest | grep -oP '"tag_name": "\K[^"]+')
+          echo "Found wit-bindgen version: $TAG"
+          
+          # Construct the URL. Note: the asset name usually matches the tag name.
+          URL="https://github.com/bytecodealliance/wit-bindgen/releases/download/${TAG}/${TAG}-x86_64-linux.tar.gz"
+          
+          curl -L "$URL" | tar xz
+          # The binary is usually inside a folder named after the tag
+          sudo mv ${TAG}-x86_64-linux/wit-bindgen /usr/local/bin/
           chmod +x /usr/local/bin/wit-bindgen
 
       - name: Install wash (Binary Method)
