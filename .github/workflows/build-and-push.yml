@@ -74,25 +74,28 @@ jobs:
       - name: Ensure Build Directory
         run: mkdir -p build gen
 
-      - name: Fetch WASI HTTP Dependencies
+      - name: Fetch WASI Standard Library (WIT)
         run: |
           mkdir -p wit/deps
-          # We fetch the standard WASI interfaces (http, io, clocks, etc.)
-          # These are required to satisfy the 'wasi:http' dependency
-          curl -L https://github.com/WebAssembly/wasi-http/archive/refs/tags/v0.2.0.tar.gz | tar xz -C wit/deps --strip-components=1
-          curl -L https://github.com/WebAssembly/wasi-io/archive/refs/tags/v0.2.0.tar.gz | tar xz -C wit/deps --strip-components=1
-          # Move your hello.wit into the wit folder if it isn't there already
+          # Download the core WASI 0.2.0 interfaces
+          curl -L https://github.com/WebAssembly/wasi-cli/archive/refs/tags/v0.2.0.tar.gz | tar xz -C wit/deps --strip-components=1
+          
+          # THE CLEANUP: Remove everything that confuses the parser
+          # We only want the .wit files. 
+          find wit/deps -type d -name ".github" -exec rm -rf {} +
+          find wit/deps -type d -name "tests" -exec rm -rf {} +
+          find wit/deps -type f ! -name "*.wit" -delete
+          
+          # Ensure your hello.wit is in the root of /wit
           mv hello.wit wit/ || true
 
-
-        
       - name: Generate Bindings
         run: |
-          # Point to the directory, not the file
+          # Pointing to the directory allows wit-bindgen to resolve 'wasi:http' from /deps
           wit-bindgen c ./wit --out-dir gen
           
-          echo "Generated files:"
-          ls -R gen
+          echo "Binding generation complete. Files created:"
+          ls gen
 
       - name: Compile C++ to WASM
         run: |
