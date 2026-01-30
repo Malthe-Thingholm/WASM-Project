@@ -20,21 +20,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
+      - name: Install wasi-sdk
         run: |
-          # Install wasi-sdk
           export WASI_VERSION=22
-          curl -L https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_VERSION}/wasi-sdk-${WASI_VERSION}.0-linux.tar.gz | tar xz
-          sudo mv wasi-sdk-${WASI_VERSION}.0 ${WASI_SDK_PATH}
-          
-          # Install wit-bindgen
+          mkdir -p ${{ env.WASI_SDK_PATH }}
+          curl -L https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_VERSION}/wasi-sdk-${WASI_VERSION}.0-linux.tar.gz | tar xz -C /tmp
+          sudo mv /tmp/wasi-sdk-${WASI_VERSION}.0/* ${{ env.WASI_SDK_PATH }}/
+
+      - name: Install wit-bindgen
+        run: |
           curl -L https://github.com/bytecodealliance/wit-bindgen/releases/download/wit-bindgen-v0.24.0/wit-bindgen-v0.24.0-x86_64-linux.tar.gz | tar xz
           sudo mv wit-bindgen-v0.24.0-x86_64-linux/wit-bindgen /usr/local/bin/
+          chmod +x /usr/local/bin/wit-bindgen
 
-          # Install wash (wasmCloud Shell)
-          curl -s https://packagecloud.io/install/repositories/wasmcloud/core/script.deb.sh | sudo analytics=false bash
-          sudo apt-get install wash
+      - name: Install wash (Binary Method)
+        run: |
+          # Fetch the latest wash binary directly from GitHub
+          curl -L https://github.com/wasmCloud/wasmCloud/releases/download/wash-v0.29.1/wash-x86_64-unknown-linux-musl.tar.gz | tar xz
+          sudo mv wash /usr/local/bin/
+          chmod +x /usr/local/bin/wash
 
+      - name: Ensure Build Directory
+        run: mkdir -p build gen
+        
       - name: Generate Bindings
         run: |
           wit-bindgen c --autodocs-always ./hello.wit --out-dir gen
