@@ -1,0 +1,25 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: my-system-backend
+spec:
+  components:
+    - name: hello-actor
+      type: actor
+      properties:
+        image: ghcr.io/your-user/hello-actor:latest # We'll push here via GH Actions
+    - name: http-server
+      type: capability
+      properties:
+        image: wasmcloud.azurecr.io/httpserver:0.19.1
+        config:
+          - name: default-http
+            values:
+              address: 0.0.0.0:8080 # This will be mapped to Render's $PORT
+  traits:
+    - type: link
+      properties:
+        target: http-server
+        namespace: wasi
+        package: http
+        interfaces: [incoming-handler]
