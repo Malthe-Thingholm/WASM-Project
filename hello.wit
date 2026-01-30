@@ -1,0 +1,5 @@
+package my-system:backend;
+
+world hello {
+  export wasi:http/incoming-handler@0.2.0;
+}
