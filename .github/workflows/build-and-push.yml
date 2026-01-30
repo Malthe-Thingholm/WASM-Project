@@ -88,11 +88,10 @@ jobs:
         
       - name: Generate Bindings
         run: |
-          # Simplified command for v0.51.0
-          wit-bindgen c ./hello.wit --out-dir gen
+          # Point to the directory, not the file
+          wit-bindgen c ./wit --out-dir gen
           
-          # Diagnostic: See exactly what files were created
-          echo "Generated files in gen/:"
+          echo "Generated files:"
           ls -R gen
 
       - name: Compile C++ to WASM
