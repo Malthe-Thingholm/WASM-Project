@@ -76,7 +76,12 @@ jobs:
         
       - name: Generate Bindings
         run: |
-          wit-bindgen c --autodocs-always ./hello.wit --out-dir gen
+          # Simplified command for v0.51.0
+          wit-bindgen c ./hello.wit --out-dir gen
+          
+          # Diagnostic: See exactly what files were created
+          echo "Generated files in gen/:"
+          ls -R gen
 
       - name: Compile C++ to WASM
         run: |
