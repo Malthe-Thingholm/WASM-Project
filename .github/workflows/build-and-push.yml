@@ -36,6 +36,10 @@ jobs:
           # Construct the URL. Note: the asset name usually matches the tag name.
           URL="https://github.com/bytecodealliance/wit-bindgen/releases/download/${TAG}/${TAG}-x86_64-linux.tar.gz"
           
+          echo "Download URL: $URL"
+          curl -L "$URL" -o wit-bindgen.tar.gz
+          tar xzf wit-bindgen.tar.gz
+          
           curl -L "$URL" | tar xz
           # The binary is usually inside a folder named after the tag
           sudo mv ${TAG}-x86_64-linux/wit-bindgen /usr/local/bin/
