@@ -51,12 +51,27 @@ jobs:
           # Verify installation
           wit-bindgen --version
 
-      - name: Install wash (Binary Method)
+      - name: Install wash (Dynamic Asset Search)
         run: |
-          # Fetch the latest wash binary directly from GitHub
-          curl -L https://github.com/wasmCloud/wasmCloud/releases/download/wash-v0.29.1/wash-x86_64-unknown-linux-musl.tar.gz | tar xz
+          # 1. Find the latest release tag that starts with 'wash-v'
+          TAG=$(curl -s https://api.github.com/repos/wasmCloud/wasmCloud/releases | jq -r '.[].tag_name | select(startswith("wash-v"))' | head -n 1)
+          echo "Latest wash tag found: $TAG"
+
+          # 2. Get the specific download URL for that tag
+          # We look for the x86_64-unknown-linux-musl asset
+          DOWNLOAD_URL=$(curl -s "https://api.github.com/repos/wasmCloud/wasmCloud/releases/tags/$TAG" | jq -r '.assets[] | select(.name | contains("x86_64-unknown-linux-musl") and contains("tar.gz")) | .browser_download_url')
+          
+          echo "Downloading from: $DOWNLOAD_URL"
+          curl -L "$DOWNLOAD_URL" -o wash.tar.gz
+          
+          # 3. Extract and install
+          tar -xzf wash.tar.gz
+          # The binary is usually just named 'wash' in the root of the tar
           sudo mv wash /usr/local/bin/
-          chmod +x /usr/local/bin/wash
+          sudo chmod +x /usr/local/bin/wash
+          
+          # Verification
+          wash --version
 
       - name: Ensure Build Directory
         run: mkdir -p build gen
