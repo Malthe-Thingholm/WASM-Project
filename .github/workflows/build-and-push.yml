@@ -77,22 +77,17 @@ jobs:
       - name: Setup WIT and Generate Bindings
         run: |
           # 1. Clean up
-          rm -rf wit_root gen
-          mkdir -p wit_root/deps
+          rm -rf wasi_src gen
           
           # 2. Download the full WASI standard library
           mkdir wasi_src
           curl -L https://github.com/WebAssembly/wasi-cli/archive/refs/tags/v0.2.0.tar.gz | tar xz --strip-components=1 -C wasi_src
           
-          # 3. Move the standard WIT packages into your deps folder
-          # We move the folders themselves (cli, http, io, etc.) to keep 'include' links intact
-          mv wasi_src/wit/* wit_root/deps/
-          
-          # 4. Put your project's hello.wit into the root
-          cp hello.wit wit_root/
-          
-          # 5. Generate. We point to the specific file, but the folder context is preserved.
-          wit-bindgen c wit_root/hello.wit --out-dir gen
+          # 3. Generate Bindings
+          # We provide TWO paths to wit-bindgen: 
+          # - Your local hello.wit
+          # - The 'wit' directory from the standard library so it can resolve 'wasi:http'
+          wit-bindgen c ./hello.wit --out-dir gen --wit-path wasi_src/wit
           
           echo "Success! Binding files created:"
           ls gen
