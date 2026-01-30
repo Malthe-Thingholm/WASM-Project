@@ -74,31 +74,37 @@ jobs:
       - name: Ensure Build Directory
         run: mkdir -p build gen
 
-      - name: Fetch WIT Dependencies
+      - name: Fetch WIT Dependencies (Staging Method)
         run: |
+          # 1. Create a temporary staging area
+          mkdir -p staging/deps
+          
+          # 2. Download the standard WASI interfaces
+          curl -L https://github.com/WebAssembly/wasi-http/archive/refs/tags/v0.2.0.tar.gz | tar xz --strip-components=1 -C staging
+          
+          # 3. Prepare the actual 'wit' folder for your project
+          # Remove any old attempts first
+          rm -rf wit/deps
           mkdir -p wit/deps
           
-          # 1. Download the full wasi-http repository (contains the definitions you need)
-          curl -L https://github.com/WebAssembly/wasi-http/archive/refs/tags/v0.2.0.tar.gz | tar xz --strip-components=1
+          # 4. Copy ONLY the interface files from staging into your deps
+          # We take the contents of staging/wit/* and move them to wit/deps/
+          cp -r staging/wit/* wit/deps/
           
-          # 2. Move the standard WASI interfaces into your deps folder
-          # We take the 'wit' folder from the wasi-http repo which is already organized
-          cp -r wit/* wit/deps/
+          # 5. Clean up staging
+          rm -rf staging
           
-          # 3. Ensure your world file is at the root of /wit
-          # If you moved it manually, this just ensures it's in the right spot for the generator
-          mv hello.wit wit/hello.wit || true
-
-          # 4. Remove any recursive deps folder if it was created accidentally
-          rm -rf wit/deps/deps
+          # 6. Verify hello.wit is in the right place
+          # If it's in the root, move it into wit/
+          [ -f hello.wit ] && mv hello.wit wit/hello.wit || echo "hello.wit already in place"
           
       - name: Generate Bindings
         run: |
-          # We point to the specific file but it will use the /deps folder automatically
-          wit-bindgen c ./wit/hello.wit --out-dir gen
+          # We point to the folder, which now has a clean /deps subfolder
+          wit-bindgen c ./wit --out-dir gen
           
-          echo "Success! Files generated:"
-          ls gen
+          echo "Binding generation successful. Current file structure:"
+          ls -R gen
 
       - name: Compile C++ to WASM
         run: |
