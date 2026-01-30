@@ -79,20 +79,22 @@ jobs:
           # 1. Create the canonical folder structure
           mkdir -p wit/deps
           
-          # 2. Download WASI CLI (for cli, clocks, filesystem, io, random, sockets)
-          mkdir -p wasi_cli_src
-          curl -L https://github.com/WebAssembly/wasi-cli/archive/refs/tags/v0.2.0.tar.gz | tar xz --strip-components=1 -C wasi_cli_src
-          cp -r wasi_cli_src/wit/* wit/deps/
+          # 2. Download WASI CLI
+          curl -L https://github.com/WebAssembly/wasi-cli/archive/refs/tags/v0.2.0.tar.gz | tar xz -C /tmp
+          cp -r /tmp/wasi-cli-0.2.0/wit/* wit/deps/
           
-          # 3. Download WASI HTTP (for http types and handlers)
-          mkdir -p wasi_http_src
-          curl -L https://github.com/WebAssembly/wasi-http/archive/refs/tags/v0.2.0.tar.gz | tar xz --strip-components=1 -C wasi_http_src
-          cp -r wasi_http_src/wit/* wit/deps/
+          # 3. Download WASI HTTP
+          curl -L https://github.com/WebAssembly/wasi-http/archive/refs/tags/v0.2.0.tar.gz | tar xz -C /tmp
+          cp -r /tmp/wasi-http-0.2.0/wit/* wit/deps/
           
-          # 4. Move your hello.wit into the 'wit' folder
+          # 4. Debug: Let's see what we actually have
+          echo "Contents of wit/deps:"
+          ls -la wit/deps/
+          
+          # 5. Move your hello.wit into the 'wit' folder
           cp hello.wit wit/
           
-          # 5. Generate Bindings
+          # 6. Generate Bindings
           wit-bindgen c ./wit/hello.wit --out-dir gen
           
           echo "Success! Binding files created:"
