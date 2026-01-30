@@ -76,24 +76,25 @@ jobs:
 
       - name: Setup WIT and Generate Bindings
         run: |
-          # 1. Create a workspace folder that wit-bindgen will understand
-          mkdir -p .wit_workspace/deps
+          # 1. Clean up
+          rm -rf wit_root gen
+          mkdir -p wit_root/deps
           
-          # 2. Copy your local hello.wit into that workspace
-          # (Assumes hello.wit is in your repo root)
-          cp hello.wit .wit_workspace/
+          # 2. Download the full WASI standard library
+          mkdir wasi_src
+          curl -L https://github.com/WebAssembly/wasi-cli/archive/refs/tags/v0.2.0.tar.gz | tar xz --strip-components=1 -C wasi_src
           
-          # 3. Fetch dependencies into the workspace
-          mkdir temp_wasi
-          curl -L https://github.com/WebAssembly/wasi-cli/archive/refs/tags/v0.2.0.tar.gz | tar xz --strip-components=1 -C temp_wasi
+          # 3. Move the standard WIT packages into your deps folder
+          # We move the folders themselves (cli, http, io, etc.) to keep 'include' links intact
+          mv wasi_src/wit/* wit_root/deps/
           
-          # 4. Copy the actual WIT definitions into the workspace's deps folder
-          cp -r temp_wasi/wit/* .wit_workspace/deps/
+          # 4. Put your project's hello.wit into the root
+          cp hello.wit wit_root/
           
-          # 5. Run bindgen pointing to the newly created workspace
-          wit-bindgen c ./.wit_workspace --out-dir gen
+          # 5. Generate. We point to the specific file, but the folder context is preserved.
+          wit-bindgen c wit_root/hello.wit --out-dir gen
           
-          echo "Bindings generated in 'gen' directory:"
+          echo "Success! Binding files created:"
           ls gen
 
       - name: Compile C++ to WASM
