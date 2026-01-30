@@ -73,6 +73,18 @@ jobs:
 
       - name: Ensure Build Directory
         run: mkdir -p build gen
+
+      - name: Fetch WASI HTTP Dependencies
+        run: |
+          mkdir -p wit/deps
+          # We fetch the standard WASI interfaces (http, io, clocks, etc.)
+          # These are required to satisfy the 'wasi:http' dependency
+          curl -L https://github.com/WebAssembly/wasi-http/archive/refs/tags/v0.2.0.tar.gz | tar xz -C wit/deps --strip-components=1
+          curl -L https://github.com/WebAssembly/wasi-io/archive/refs/tags/v0.2.0.tar.gz | tar xz -C wit/deps --strip-components=1
+          # Move your hello.wit into the wit folder if it isn't there already
+          mv hello.wit wit/ || true
+
+
         
       - name: Generate Bindings
         run: |
