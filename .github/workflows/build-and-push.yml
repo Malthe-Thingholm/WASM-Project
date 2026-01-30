@@ -74,44 +74,25 @@ jobs:
       - name: Ensure Build Directory
         run: mkdir -p build gen
 
-      - name: Fetch and Sanitize WIT Dependencies
+      - name: Fetch WIT Dependencies
         run: |
-          # 1. Clean up any previous attempts
-          rm -rf wit gen
+          # 1. Create the deps folder inside your existing wit folder
           mkdir -p wit/deps
           
-          # 2. Download the WASI 0.2 Standard Library to a temp folder
+          # 2. Download and extract only the WIT files from the standard library
           mkdir temp_wasi
           curl -L https://github.com/WebAssembly/wasi-cli/archive/refs/tags/v0.2.0.tar.gz | tar xz -C temp_wasi --strip-components=1
           
-          # 3. ONLY copy the actual WIT files (located in the 'wit' subfolder of that repo)
-          # This avoids .github, tests, and other non-WIT folders
+          # 3. Copy only the actual interfaces (this avoids the .github folder error)
           cp -r temp_wasi/wit/* wit/deps/
           
-          # 4. Move your project's world file into the root of the wit folder
-          # Ensure your local hello.wit is in the root of your repo
-          cp hello.wit wit/
-          
-          # 5. Final Cleanup: Remove anything that isn't a .wit file or a directory
-          find wit/deps -type f ! -name "*.wit" -delete
+          # 4. Clean up
           rm -rf temp_wasi
-
+          
       - name: Generate Bindings
         run: |
-          # Pointing to the directory now works because the structure is 'flat'
-          # and free of non-WIT metadata folders.
+          # Since hello.wit is already in /wit, we just point to the folder
           wit-bindgen c ./wit --out-dir gen
-          
-          echo "Current WIT Structure:"
-          ls -R wit
-
-      - name: Generate Bindings
-        run: |
-          # Pointing to the directory allows wit-bindgen to resolve 'wasi:http' from /deps
-          wit-bindgen c ./wit --out-dir gen
-          
-          echo "Binding generation complete. Files created:"
-          ls gen
 
       - name: Compile C++ to WASM
         run: |
