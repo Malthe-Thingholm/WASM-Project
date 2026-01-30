@@ -51,24 +51,22 @@ jobs:
           # Verify installation
           wit-bindgen --version
 
-      - name: Install wash (Dynamic Asset Search)
+      - name: Install wash (v2 RC from wash repo)
         run: |
-          # 1. Find the latest release tag that starts with 'wash-v'
-          TAG=$(curl -s https://api.github.com/repos/wasmCloud/wasmCloud/releases | jq -r '.[].tag_name | select(startswith("wash-v"))' | head -n 1)
-          echo "Latest wash tag found: $TAG"
-
-          # 2. Get the specific download URL for that tag
-          # We look for the x86_64-unknown-linux-musl asset
-          DOWNLOAD_URL=$(curl -s "https://api.github.com/repos/wasmCloud/wasmCloud/releases/tags/$TAG" | jq -r '.assets[] | select(.name | contains("x86_64-unknown-linux-musl") and contains("tar.gz")) | .browser_download_url')
+          # 1. Fetch releases from the wash-specific repo and find the latest RC
+          TAG=$(curl -s https://api.github.com/repos/wasmCloud/wash/releases | jq -r '.[].tag_name | select(contains("rc"))' | head -n 1)
+          echo "Found latest RC tag: $TAG"
           
-          echo "Downloading from: $DOWNLOAD_URL"
-          curl -L "$DOWNLOAD_URL" -o wash.tar.gz
+          # 2. Get the specific download URL for the x86_64 linux binary
+          # This dynamic search handles whether the file has an extension or not
+          DOWNLOAD_URL=$(curl -s "https://api.github.com/repos/wasmCloud/wash/releases/tags/$TAG" | jq -r '.assets[] | select(.name | contains("x86_64-unknown-linux-musl")) | .browser_download_url')
           
-          # 3. Extract and install
-          tar -xzf wash.tar.gz
-          # The binary is usually just named 'wash' in the root of the tar
+          echo "Downloading wash from: $DOWNLOAD_URL"
+          curl -L "$DOWNLOAD_URL" -o wash
+          
+          # 3. Make it executable and move to path
+          chmod +x wash
           sudo mv wash /usr/local/bin/
-          sudo chmod +x /usr/local/bin/wash
           
           # Verification
           wash --version
