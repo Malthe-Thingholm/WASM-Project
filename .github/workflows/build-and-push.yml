@@ -1,0 +1,74 @@
+name: Build and Push wasmCloud Actor
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}-actor
+  WASI_SDK_PATH: /opt/wasi-sdk
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          # Install wasi-sdk
+          export WASI_VERSION=22
+          curl -L https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_VERSION}/wasi-sdk-${WASI_VERSION}.0-linux.tar.gz | tar xz
+          sudo mv wasi-sdk-${WASI_VERSION}.0 ${WASI_SDK_PATH}
+          
+          # Install wit-bindgen
+          curl -L https://github.com/bytecodealliance/wit-bindgen/releases/download/wit-bindgen-v0.24.0/wit-bindgen-v0.24.0-x86_64-linux.tar.gz | tar xz
+          sudo mv wit-bindgen-v0.24.0-x86_64-linux/wit-bindgen /usr/local/bin/
+
+          # Install wash (wasmCloud Shell)
+          curl -s https://packagecloud.io/install/repositories/wasmcloud/core/script.deb.sh | sudo analytics=false bash
+          sudo apt-get install wash
+
+      - name: Generate Bindings
+        run: |
+          wit-bindgen c --autodocs-always ./hello.wit --out-dir gen
+
+      - name: Compile C++ to WASM
+        run: |
+          ${WASI_SDK_PATH}/bin/clang++ \
+            -target wasm32-wasi \
+            -Oz \
+            -o build/raw_actor.wasm \
+            main.cpp \
+            gen/hello.c \
+            gen/hello_component_type.c \
+            -Igen \
+            -Wl,--no-entry \
+            -mexec-model=reactor
+
+      - name: Sign Actor (Add wasmCloud Claims)
+        run: |
+          # wasmCloud needs actors to be signed with an identity and capabilities
+          # This creates an actor that can handle HTTP requests
+          wash claims sign build/raw_actor.wasm \
+            --name "Hello System Backend" \
+            --cap wasi:http/incoming-handler \
+            --destination build/hello_s.wasm
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push to GHCR
+        run: |
+          # wasmCloud actors are pushed as OCI artifacts
+          wash reg push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest build/hello_s.wasm --allow-latest
