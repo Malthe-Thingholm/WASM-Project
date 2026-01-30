@@ -81,13 +81,15 @@ jobs:
           
           # 2. Download WASI CLI
           curl -L https://github.com/WebAssembly/wasi-cli/archive/refs/tags/v0.2.0.tar.gz | tar xz -C /tmp
-          cp -r /tmp/wasi-cli-0.2.0/wit/* wit/deps/
+          # Copy the nested deps contents, not the parent wit folder
+          cp -r /tmp/wasi-cli-0.2.0/wit/deps/* wit/deps/
           
-          # 3. Download WASI HTTP
+          # 3. Download WASI HTTP  
           curl -L https://github.com/WebAssembly/wasi-http/archive/refs/tags/v0.2.0.tar.gz | tar xz -C /tmp
-          cp -r /tmp/wasi-http-0.2.0/wit/* wit/deps/
+          # Copy the nested deps contents, not the parent wit folder
+          cp -r /tmp/wasi-http-0.2.0/wit/deps/* wit/deps/
           
-          # 4. Debug: Let's see what we actually have
+          # 4. Debug: Let's see what we actually have now
           echo "Contents of wit/deps:"
           ls -la wit/deps/
           
