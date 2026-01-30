@@ -74,37 +74,27 @@ jobs:
       - name: Ensure Build Directory
         run: mkdir -p build gen
 
-      - name: Fetch WIT Dependencies (Staging Method)
+      - name: Setup WIT and Generate Bindings
         run: |
-          # 1. Create a temporary staging area
-          mkdir -p staging/deps
+          # 1. Create a workspace folder that wit-bindgen will understand
+          mkdir -p .wit_workspace/deps
           
-          # 2. Download the standard WASI interfaces
-          curl -L https://github.com/WebAssembly/wasi-http/archive/refs/tags/v0.2.0.tar.gz | tar xz --strip-components=1 -C staging
+          # 2. Copy your local hello.wit into that workspace
+          # (Assumes hello.wit is in your repo root)
+          cp hello.wit .wit_workspace/
           
-          # 3. Prepare the actual 'wit' folder for your project
-          # Remove any old attempts first
-          rm -rf wit/deps
-          mkdir -p wit/deps
+          # 3. Fetch dependencies into the workspace
+          mkdir temp_wasi
+          curl -L https://github.com/WebAssembly/wasi-cli/archive/refs/tags/v0.2.0.tar.gz | tar xz --strip-components=1 -C temp_wasi
           
-          # 4. Copy ONLY the interface files from staging into your deps
-          # We take the contents of staging/wit/* and move them to wit/deps/
-          cp -r staging/wit/* wit/deps/
+          # 4. Copy the actual WIT definitions into the workspace's deps folder
+          cp -r temp_wasi/wit/* .wit_workspace/deps/
           
-          # 5. Clean up staging
-          rm -rf staging
+          # 5. Run bindgen pointing to the newly created workspace
+          wit-bindgen c ./.wit_workspace --out-dir gen
           
-          # 6. Verify hello.wit is in the right place
-          # If it's in the root, move it into wit/
-          [ -f hello.wit ] && mv hello.wit wit/hello.wit || echo "hello.wit already in place"
-          
-      - name: Generate Bindings
-        run: |
-          # We point to the folder, which now has a clean /deps subfolder
-          wit-bindgen c ./wit --out-dir gen
-          
-          echo "Binding generation successful. Current file structure:"
-          ls -R gen
+          echo "Bindings generated in 'gen' directory:"
+          ls gen
 
       - name: Compile C++ to WASM
         run: |
