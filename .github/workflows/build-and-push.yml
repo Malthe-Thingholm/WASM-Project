@@ -76,23 +76,29 @@ jobs:
 
       - name: Fetch WIT Dependencies
         run: |
-          # 1. Create the deps folder inside your existing wit folder
           mkdir -p wit/deps
           
-          # 2. Download and extract only the WIT files from the standard library
-          mkdir temp_wasi
-          curl -L https://github.com/WebAssembly/wasi-cli/archive/refs/tags/v0.2.0.tar.gz | tar xz -C temp_wasi --strip-components=1
+          # 1. Download the full wasi-http repository (contains the definitions you need)
+          curl -L https://github.com/WebAssembly/wasi-http/archive/refs/tags/v0.2.0.tar.gz | tar xz --strip-components=1
           
-          # 3. Copy only the actual interfaces (this avoids the .github folder error)
-          cp -r temp_wasi/wit/* wit/deps/
+          # 2. Move the standard WASI interfaces into your deps folder
+          # We take the 'wit' folder from the wasi-http repo which is already organized
+          cp -r wit/* wit/deps/
           
-          # 4. Clean up
-          rm -rf temp_wasi
+          # 3. Ensure your world file is at the root of /wit
+          # If you moved it manually, this just ensures it's in the right spot for the generator
+          mv hello.wit wit/hello.wit || true
+
+          # 4. Remove any recursive deps folder if it was created accidentally
+          rm -rf wit/deps/deps
           
       - name: Generate Bindings
         run: |
-          # Since hello.wit is already in /wit, we just point to the folder
-          wit-bindgen c ./wit --out-dir gen
+          # We point to the specific file but it will use the /deps folder automatically
+          wit-bindgen c ./wit/hello.wit --out-dir gen
+          
+          echo "Success! Files generated:"
+          ls gen
 
       - name: Compile C++ to WASM
         run: |
