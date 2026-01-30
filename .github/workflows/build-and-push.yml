@@ -81,16 +81,29 @@ jobs:
           
           # 2. Download WASI CLI
           curl -L https://github.com/WebAssembly/wasi-cli/archive/refs/tags/v0.2.0.tar.gz | tar xz -C /tmp
-          # Copy the nested deps contents, not the parent wit folder
           cp -r /tmp/wasi-cli-0.2.0/wit/deps/* wit/deps/
           
-          # 3. Download WASI HTTP  
+          # 3. Download WASI HTTP and debug its structure
           curl -L https://github.com/WebAssembly/wasi-http/archive/refs/tags/v0.2.0.tar.gz | tar xz -C /tmp
-          # Copy the nested deps contents, not the parent wit folder
-          cp -r /tmp/wasi-http-0.2.0/wit/deps/* wit/deps/
+          
+          echo "Contents of wasi-http extraction:"
+          ls -la /tmp/wasi-http-0.2.0/
+          echo ""
+          echo "Contents of wasi-http wit folder:"
+          ls -la /tmp/wasi-http-0.2.0/wit/ || echo "No wit folder found"
+          echo ""
+          echo "Full tree:"
+          find /tmp/wasi-http-0.2.0 -name "*.wit" | head -20
+          
+          # Copy whatever structure exists
+          if [ -d "/tmp/wasi-http-0.2.0/wit/deps" ]; then
+            cp -r /tmp/wasi-http-0.2.0/wit/deps/* wit/deps/
+          elif [ -d "/tmp/wasi-http-0.2.0/wit" ]; then
+            cp -r /tmp/wasi-http-0.2.0/wit/* wit/deps/
+          fi
           
           # 4. Debug: Let's see what we actually have now
-          echo "Contents of wit/deps:"
+          echo "Final contents of wit/deps:"
           ls -la wit/deps/
           
           # 5. Move your hello.wit into the 'wit' folder
