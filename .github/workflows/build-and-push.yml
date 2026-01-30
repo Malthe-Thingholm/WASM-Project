@@ -90,12 +90,12 @@ jobs:
           mkdir -p wit/deps/http
           cp /tmp/wasi-http-0.2.0/wit/*.wit wit/deps/http/
           
-          # 5. Debug: Let's see what we have now
-          echo "Final contents of wit/deps:"
-          ls -la wit/deps/
+          # 5. Debug: Check the package declaration
+          echo "Contents of handler.wit:"
+          head -20 wit/deps/http/handler.wit
           echo ""
-          echo "Contents of wit/deps/http:"
-          ls -la wit/deps/http/
+          echo "Contents of types.wit:"
+          head -10 wit/deps/http/types.wit
           
           # 6. Move your hello.wit into the 'wit' folder
           cp hello.wit wit/
